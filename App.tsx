@@ -1,45 +1,45 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import AppNavigator from './src/navigation/AppNavigator';
+import * as db from './src/services/db';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+const App = () => {
+  const [isReady, setIsReady] = useState(false);
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  useEffect(() => {
+    initializeApp();
+  }, []);
 
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
+  const initializeApp = async () => {
+    try {
+      // Initialize DB
+      await db.openDatabase();
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+      // Check if user exists
+      const user = await db.getUser();
+      if (!user) {
+        // ✅ ONLY create if truly needed
+        // Most users will already have data from login
+        console.log('⚠️ No user found, skipping default user creation');
+        // Removed the default user creation - let authentication handle it
+      }
 
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
+      setIsReady(true);
+    } catch (error) {
+      console.error('Failed to initialize app:', error);
+      setIsReady(true); // Continue anyway
+    }
+  };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
+  if (!isReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#4A90E2" />
+      </View>
+    );
+  }
+
+  return <AppNavigator />;
+};
 
 export default App;
